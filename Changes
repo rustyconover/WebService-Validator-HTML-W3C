@@ -1,3 +1,8 @@
+   Wednesday 26th February 2014
+ - Add detection of SOAP faults for invalid markup that is sent with invalid utf8
+ - Fix problem with detection of SOAP or XML output.
+
+
 0.28 Wednesday 18th January 2012
  - Fix RT #74123
  - Fix RT #69998

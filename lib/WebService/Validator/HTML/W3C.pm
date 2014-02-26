@@ -343,9 +343,30 @@ sub errors {
             push @errs, $err;
         }
     } else { # assume soap...
-        if ( ! $xp->findnodes('/env:Envelope') ) {
+
+        # Calling this seems to fail if the content is XHTML/XML so do a faster quick check.
+        if ( $self->_content() !~ /\/env:Envelope/ || !$xp->findnodes('/env:Envelope') ) {
             return $self->validator_error( 'Result format does not appear to be SOAP' );
         }
+
+        # If there is a fault, we should indicate it.
+        my @faults = $xp->findnodes ( '//env:Fault' );
+        foreach my $fault ( @faults) {
+            my $message = $xp->find( './env:Detail/m:errordetail', $fault )->get_node(1)->getChildNode(1)->getValue;
+            my $line;
+            if($message =~ /on line\s+(\d+)\./s) {
+                $line = $1;
+            }
+
+            my $err = WebService::Validator::HTML::W3C::Error->new({ 
+                explanation => $message,
+                line => $line,
+                msgid       => $xp->find( './env:Detail/m:messageid', $fault )->get_node(1)->getChildNode(1)->getValue,
+                msg         => $xp->find( './env:Reason/env:Text', $fault )->get_node(1)->getChildNode(1)->getValue,
+                                                                   });
+            push @errs, $err;
+        }
+
        my @messages = $xp->findnodes( '/env:Envelope/env:Body/m:markupvalidationresponse/m:errors/m:errorlist/m:error' );
 
        foreach my $msg ( @messages ) {
@@ -541,6 +562,12 @@ sub _parse_validator_response {
 
     # remove non digits to fix output bug in some versions of validator
     $valid_err_num =~ s/\D+//g if $valid_err_num;
+
+    if ( defined($valid) && $valid eq 'Abort') {
+        $self->is_valid(0);
+        $self->num_errors(1);
+        return 1;
+    }
 
     if ( $valid and $valid_err_num ) {
         $self->is_valid(0);

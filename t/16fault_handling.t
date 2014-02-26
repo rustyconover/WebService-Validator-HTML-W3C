@@ -9,6 +9,7 @@ my $v = WebService::Validator::HTML::W3C->new(detailed => 1);
 
 ok ($v, 'object created');
 
+SKIP: {
 if ( $ENV{ 'TEST_AUTHOR' } ) {
 # A simple document with invalid utf8
     my $data = "<!DOCTYPE html><html><head><title>test</title></head><body>\xf0\x28\x8c\x28</body></html>";
@@ -25,5 +26,7 @@ if ( $ENV{ 'TEST_AUTHOR' } ) {
     }
 } else {
     skip "TEST_AUTHOR environment variable not defined", 4 unless $ENV{ 'TEST_AUTHOR' };
+}
+
 }
 
